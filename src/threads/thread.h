@@ -142,6 +142,11 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-void try_awaking_thread(struct thread *t, void *aux UNUSED);
+/* Used for THREAD FOR EACH in timer.c. */
+void try_awaking_thread (struct thread *, void *);
+
+bool compare_threads_by_priority (const struct list_elem *,
+                                  const struct list_elem *,
+                                  void *);
 
 #endif /* threads/thread.h */
