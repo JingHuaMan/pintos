@@ -463,6 +463,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->remaining_time_to_wake_up = 0;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -582,3 +583,13 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+void try_awaking_thread(struct thread *t, void *aux UNUSED)
+  {
+    if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
+	  {
+        t->remaining_time_to_wake_up--;
+		if (t->remaining_time_to_wake_up <= 0)
+		  thread_unblock(t);
+	  }
+  }
