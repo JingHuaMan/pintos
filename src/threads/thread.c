@@ -200,6 +200,9 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
+  
+  if (thread_current ()->priority < priority)
+    thread_yield ();
 
   return tid;
 }
@@ -348,6 +351,9 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  if (list_entry (list_back (&ready_list), struct thread, elem)->priority >
+	  new_priority)
+	thread_yield ();
 }
 
 /* Returns the current thread's priority. */
@@ -597,11 +603,12 @@ allocate_tid (void)
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
 void try_awaking_thread(struct thread *t, void *aux UNUSED)
-  {
-    if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
-	  {
-        t->remaining_time_to_wake_up--;
-		if (t->remaining_time_to_wake_up <= 0)
-		  thread_unblock(t);
-	  }
-  }
+{
+  if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
+    {
+      t->remaining_time_to_wake_up--;
+	  if (t->remaining_time_to_wake_up <= 0)
+	    thread_unblock(t);
+	}
+}
+
