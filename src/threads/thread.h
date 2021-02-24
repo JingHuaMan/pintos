@@ -104,6 +104,12 @@ struct thread
     
 	/* Owned by devices/timer.c. */
 	int64_t remaining_time_to_wake_up;
+	
+	int real_priority;
+	
+	struct list locks_held;
+	
+	struct lock *current_lock;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -148,5 +154,9 @@ void try_awaking_thread (struct thread *, void *);
 bool compare_threads_by_priority (const struct list_elem *,
                                   const struct list_elem *,
                                   void *);
+
+void thread_update_priority (struct thread *);
+
+void thread_ready_rearrange (struct thread *);
 
 #endif /* threads/thread.h */

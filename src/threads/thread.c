@@ -350,7 +350,9 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  thread_current ()->real_priority = new_priority;
+  thread_update_priority (&thread_current ());
+  
   if (!list_empty (&ready_list) && list_entry (list_back (&ready_list),
       struct thread, elem)->priority > new_priority)
 	thread_yield ();
@@ -482,6 +484,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->remaining_time_to_wake_up = 0;
+  t->real_priority = priority;
+  t->current_lock = NULL;
+  list_init (&t->locks_held);
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -597,12 +602,13 @@ allocate_tid (void)
 
   return tid;
 }
-
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-void try_awaking_thread(struct thread *t, void *aux UNUSED)
+void
+try_awaking_thread(struct thread *t, void *aux UNUSED)
 {
   if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
     {
@@ -610,5 +616,32 @@ void try_awaking_thread(struct thread *t, void *aux UNUSED)
 	  if (t->remaining_time_to_wake_up <= 0)
 	    thread_unblock(t);
 	}
+}
+
+void
+thread_update_priority (struct thread *t)
+{
+  int real_priority = t->real_priority;
+  
+  if (list_empty (&t->locks_held))
+    t->priority = real_priority;
+  else
+    {
+	  int lock_priority = list_entry (list_max (&t->locks_held,
+                                      compare_locks_by_priority, NULL),
+					                  struct lock, elem)->max_priority;
+      t->priority = real_priority > lock_priority ?
+	                real_priority : lock_priority;
+	}
+}
+
+void
+thread_ready_rearrange (struct thread *t)
+{
+  ASSERT (t->status == THREAD_READY);
+  
+  list_remove (&t->elem);
+  list_insert_ordered (&ready_list, &t->elem,
+                       compare_threads_by_priority, NULL);
 }
 
