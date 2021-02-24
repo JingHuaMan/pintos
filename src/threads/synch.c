@@ -32,7 +32,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
-static struct thread *t get_max_priority_thread (struct semaphore *);
+static struct thread * get_max_priority_thread (struct semaphore *);
 static void lock_update_priority (struct lock *);
 
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
@@ -117,7 +117,7 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters)) 
-    thread_unblock (get_max_priority_thread (sema));
+    thread_unblock (&get_max_priority_thread (sema));
   sema->value++;
   intr_set_level (old_level);
   
@@ -218,7 +218,7 @@ lock_acquire (struct lock *lock)
 			  if (temp_holder->status == THREAD_READY)
 			    thread_ready_rearrange (temp_holder);
 			  
-			  temp_lock = temp_holder->current_lock ();
+			  temp_lock = temp_holder->current_lock;
 			  if (temp_lock == NULL)
 				break;
 			  else
@@ -269,7 +269,7 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
-  thread_update_priority (&lock->holder);
+  thread_update_priority (lock->holder);
   lock->holder = NULL;
   list_remove (&lock->elem);
   sema_up (&lock->semaphore);
@@ -377,7 +377,7 @@ cond_broadcast (struct condition *cond, struct lock *lock)
     cond_signal (cond, lock);
 }
 
-static struct thread *t
+static struct thread *
 get_max_priority_thread (struct semaphore *sema)
 {
   return list_entry (list_max (&sema->waiters,
