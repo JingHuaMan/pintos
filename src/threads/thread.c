@@ -201,7 +201,7 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
   
-  if (thread_current ()->priority < priority)
+  if (thread_get_priority () < priority)
     thread_yield ();
 
   return tid;
@@ -222,16 +222,6 @@ thread_block (void)
   thread_current ()->status = THREAD_BLOCKED;
   schedule ();
 }
-
-bool compare_threads_by_priority (const struct list_elem *a,
-                                  const struct list_elem *b,
-                                  void *aux UNUSED)
-  {
-	struct thread *a_thread = list_entry (a, struct thread, elem);
-	struct thread *b_thread = list_entry (b, struct thread, elem);
-	
-	return a_thread->priority <= b_thread->priority;
-  }
 
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
@@ -254,6 +244,8 @@ thread_unblock (struct thread *t)
                        NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+  
+  try_thread_yield ();
 }
 
 /* Returns the name of the running thread. */
@@ -352,10 +344,7 @@ thread_set_priority (int new_priority)
 {
   thread_current ()->real_priority = new_priority;
   thread_update_priority (thread_current ());
-  
-  if (!list_empty (&ready_list) && list_entry (list_back (&ready_list),
-      struct thread, elem)->priority > new_priority)
-	thread_yield ();
+  try_thread_yield ();
 }
 
 /* Returns the current thread's priority. */
@@ -395,7 +384,7 @@ thread_get_recent_cpu (void)
   /* Not yet implemented. */
   return 0;
 }
-
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -444,7 +433,7 @@ kernel_thread (thread_func *function, void *aux)
   function (aux);       /* Execute the thread function. */
   thread_exit ();       /* If function() returns, kill the thread. */
 }
-
+
 /* Returns the running thread. */
 struct thread *
 running_thread (void) 
@@ -608,6 +597,24 @@ allocate_tid (void)
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
 void
+try_thread_yield (void)
+{
+  if (!list_empty (&ready_list) &&
+      list_entry (list_back (&ready_list), struct thread, elem)->priority >
+	  thread_get_priority ())
+	thread_yield ();
+}
+
+bool
+compare_threads_by_priority (const struct list_elem *a,
+                             const struct list_elem *b,
+                             void *aux UNUSED)
+{
+  return list_entry (a, struct thread, elem)->priority <=
+         list_entry (b, struct thread, elem)->priority;
+}
+
+void
 try_awaking_thread(struct thread *t, void *aux UNUSED)
 {
   if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
@@ -644,4 +651,3 @@ thread_ready_rearrange (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem,
                        compare_threads_by_priority, NULL);
 }
-

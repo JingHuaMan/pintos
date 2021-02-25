@@ -149,6 +149,8 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 /* Used for THREAD FOR EACH in timer.c. */
+void try_thread_yield (void);
+
 void try_awaking_thread (struct thread *, void *);
 
 bool compare_threads_by_priority (const struct list_elem *,
