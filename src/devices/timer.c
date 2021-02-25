@@ -92,7 +92,6 @@ timer_sleep (int64_t ticks)
     return;
   ASSERT (intr_get_level () == INTR_ON);
 
-  // printf("#####\nEnter\n#####\n\n");
   intr_disable ();
   struct thread *cur = thread_current ();
   cur->remaining_time_to_wake_up = ticks;

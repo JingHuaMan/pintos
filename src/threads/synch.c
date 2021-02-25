@@ -269,9 +269,9 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
-  thread_update_priority (lock->holder);
   lock->holder = NULL;
   list_remove (&lock->elem);
+  thread_update_priority (lock->holder);
   sema_up (&lock->semaphore);
 }
 
