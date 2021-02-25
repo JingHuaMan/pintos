@@ -208,7 +208,7 @@ lock_acquire (struct lock *lock)
 	  struct lock *temp_lock = lock;
 	  struct thread *temp_holder = lock->holder;
 
-	  while (temp_locker->max_priority < current_priority)
+	  while (temp_lock->max_priority < current_priority)
 		{
 		  temp_lock->max_priority = current_priority;
 		  thread_update_priority (temp_holder);
