@@ -201,8 +201,7 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
   
-  if (thread_get_priority () < priority)
-    thread_yield ();
+  try_thread_yield ();
 
   return tid;
 }
@@ -244,8 +243,6 @@ thread_unblock (struct thread *t)
                        NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
-  
-  try_thread_yield ();
 }
 
 /* Returns the name of the running thread. */
@@ -342,8 +339,11 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  enum intr_level old_level = intr_disable ();
   thread_current ()->real_priority = new_priority;
   thread_update_priority (thread_current ());
+  intr_set_level (old_level);
+  
   try_thread_yield ();
 }
 
@@ -599,10 +599,14 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 void
 try_thread_yield (void)
 {
-  if (!list_empty (&ready_list) &&
-      list_entry (list_back (&ready_list), struct thread, elem)->priority >
-	  thread_get_priority ())
-	thread_yield ();
+  enum intr_level old_level = intr_disable ();
+  bool result = !list_empty (&ready_list) &&
+                list_entry (list_back (&ready_list), struct thread, elem)->priority >
+	            thread_get_priority ();
+  intr_set_level (old_level);
+  
+  if (result)
+	thread_yield (); 
 }
 
 bool
@@ -628,6 +632,7 @@ try_awaking_thread(struct thread *t, void *aux UNUSED)
 void
 thread_update_priority (struct thread *t)
 {
+  enum intr_level old_level = intr_disable ();
   int real_priority = t->real_priority;
   
   if (list_empty (&t->locks_held))
@@ -639,7 +644,8 @@ thread_update_priority (struct thread *t)
 					                  struct lock, elem)->max_priority;
       t->priority = real_priority > lock_priority ?
 	                real_priority : lock_priority;
-	}
+	} 
+  intr_set_level (old_level);
 }
 
 void
@@ -647,7 +653,9 @@ thread_ready_rearrange (struct thread *t)
 {
   ASSERT (t->status == THREAD_READY);
   
+  enum intr_level old_level = intr_disable ();
   list_remove (&t->elem);
   list_insert_ordered (&ready_list, &t->elem,
                        compare_threads_by_priority, NULL);
+  intr_set_level (old_level);
 }
