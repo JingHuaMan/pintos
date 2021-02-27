@@ -393,6 +393,7 @@ sema_get_max_priority_thread (struct semaphore *sema)
 static void
 lock_update_priority (struct lock *lock)
 {
+  int result;
   enum intr_level old_level = intr_disable ();
   
   if (list_empty (&(&lock->semaphore)->waiters))
