@@ -398,7 +398,6 @@ static void
 lock_update_priority (struct lock *lock)
 {
   int result;
-  enum intr_level old_level = intr_disable ();
   
   if (list_empty (&(&lock->semaphore)->waiters))
    result = 0;
@@ -411,8 +410,6 @@ lock_update_priority (struct lock *lock)
 		return;
 	}
   lock->max_priority = result;
-  
-  intr_set_level (old_level);
 }
 
 bool
