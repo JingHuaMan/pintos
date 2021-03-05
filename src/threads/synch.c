@@ -34,9 +34,6 @@
 
 static struct thread * sema_get_max_priority_thread (struct semaphore *);
 static void lock_update_priority (struct lock *);
-static bool compare_semaphore_elem_by_priority (const struct list_elem *,
-                                                const struct list_elem *;
-												void *);
 
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
    nonnegative integer along with two atomic operators for
@@ -427,12 +424,11 @@ compare_locks_by_priority (const struct list_elem *a,
          list_entry (b, struct lock, elem)->max_priority;
 }
 
-static bool
+bool
 compare_semaphore_elem_by_priority (const struct list_elem *a,
                                     const struct list_elem *b,
-                                    void *aux UNUSED)
+									void *aux UNUSED)
 {
-  struct semaphore_elem *a_se = list_entry (a, struct semaphore_elem, elem);
-  struct semaphore_elem *b_se = list_entry (b, struct semaphore_elem, elem);
-  return a_se->priority <= b_se->priority;
+  return list_entry (a, struct semaphore_elem, elem)->priority <=
+         list_entry (b, struct semaphore_elem, elem)->priority;
 }

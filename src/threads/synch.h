@@ -53,5 +53,9 @@ void cond_broadcast (struct condition *, struct lock *);
 bool compare_locks_by_priority (const struct list_elem *,
                                 const struct list_elem *,
                                 void *);
+								
+bool compare_semaphore_elem_by_priority (const struct list_elem *,
+                                         const struct list_elem *,
+									     void *);
 
 #endif /* threads/synch.h */
