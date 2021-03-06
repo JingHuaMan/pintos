@@ -76,6 +76,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 void thread_update_recent_cpu(struct thread *, void *);
+static void thread_update_priority_mlfqs(struct thread *);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -146,16 +147,14 @@ thread_tick (void)
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
-  /* Add recent cpu of the current thread by 1. */
-  FP_ADD_MIX (t->recent_cpu, 1);
   /* Every four ticks, update the priority of the current thread. */
-  
   if (thread_mlfqs)
     {
-	  fixed_t new_priority = FP_SUB (FP_CONST (PRI_MAX),
-						             FP_ADD (FP_DIV_MIX (t->recent_cpu, 4),
-						                     FP_CONST ((t->nice) * 2)));
-      thread_set_priority (FP_ROUND (new_priority)); 
+	  /* Add recent cpu of the current thread by 1. */
+      t->recent_cpu = FP_ADD_MIX (t->recent_cpu, 1);
+		
+	  /* Update the priority of the current thread. */
+	  thread_update_priority_mlfqs (thread_current ());
 	}
 }
 
@@ -379,6 +378,8 @@ void
 thread_set_nice (int nice) 
 {
   thread_current ()->nice = nice;
+  thread_update_priority_mlfqs (thread_current ());
+  try_thread_yield ();
 }
 
 /* Returns the current thread's nice value. */
@@ -684,6 +685,7 @@ thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
                   FP_DIV (FP_MULT (FP_MULT_MIX (load_avg, 2), t->recent_cpu),
                           FP_ADD_MIX (FP_MULT_MIX (load_avg, 2), 1))
 				  , t->nice);
+  thread_mlfqs_update_priority (t);
 }
 
 void
@@ -700,4 +702,16 @@ thread_tick_one_second (void)
   thread_foreach (thread_update_recent_cpu, NULL);
 
   intr_set_level (old_level);
+}
+
+static
+void thread_update_priority_mlfqs(struct thread *t)
+{
+  int new_priority = FP_ROUND (FP_SUB (FP_CONST (PRI_MAX - t->nice * 2),
+						               FP_DIV_MIX (t->recent_cpu, 4)));
+  if (new_priority > PRI_MAX)
+    new_priority = PRI_MAX;
+  else if (new_priority < PRI_MIN)
+    new_priority = PRIMIN;
+  t->priority = new_priority;
 }
