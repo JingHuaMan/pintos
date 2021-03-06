@@ -148,7 +148,7 @@ thread_tick (void)
     intr_yield_on_return ();
 
   /* Every four ticks, update the priority of the current thread. */
-  if (thread_mlfqs)
+  if (thread_mlfqs && thread_ticks % TIME_SLICE == 0)
     {
 	  /* Add recent cpu of the current thread by 1. */
       t->recent_cpu = FP_ADD_MIX (t->recent_cpu, 1);
