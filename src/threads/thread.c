@@ -147,14 +147,14 @@ thread_tick (void)
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
-  /* Every four ticks, update the priority of the current thread. */
-  if (thread_mlfqs && thread_ticks % TIME_SLICE == 0)
+  if (thread_mlfqs)
     {
 	  /* Add recent cpu of the current thread by 1. */
       t->recent_cpu = FP_ADD_MIX (t->recent_cpu, 1);
 		
-	  /* Update the priority of the current thread. */
-	  thread_update_priority_mlfqs (thread_current ());
+	  /* Every four ticks, update the priority of the current thread. */
+	  if (thread_ticks % TIME_SLICE == 0)
+	    thread_update_priority_mlfqs (thread_current ());
 	}
 }
 
@@ -707,8 +707,9 @@ thread_tick_one_second (void)
 static void
 thread_update_priority_mlfqs(struct thread *t)
 {
-  int new_priority = FP_ROUND (FP_SUB (FP_CONST (PRI_MAX - t->nice * 2),
-						               FP_DIV_MIX (t->recent_cpu, 4)));
+  int new_priority = (int) FP_ROUND (
+                           FP_SUB (FP_CONST ((PRI_MAX - ((t->nice) * 2))),
+						           FP_DIV_MIX (t->recent_cpu, 4)));
   if (new_priority > PRI_MAX)
     new_priority = PRI_MAX;
   else if (new_priority < PRI_MIN)
