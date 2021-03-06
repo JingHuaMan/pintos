@@ -682,7 +682,7 @@ thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
 { 
   t->recent_cpu = FP_ADD_MIX (
                   FP_DIV (FP_MULT (FP_MULT_MIX (load_avg, 2), t->recent_cpu),
-                          FP_ADD_MIX (FP_MULT (FP_MULT_MIX (load_avg, 2)), 1))
+                          FP_ADD_MIX (FP_MULT_MIX (load_avg, 2), 1))
 				  , t->nice);
 }
 
