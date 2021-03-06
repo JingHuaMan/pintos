@@ -110,6 +110,10 @@ struct thread
 	struct list locks_held;
 	
 	struct lock *current_lock;
+	
+	int nice;
+	
+	fixed_t recent_cpu;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -160,5 +164,7 @@ bool compare_threads_by_priority (const struct list_elem *,
 void thread_update_priority (struct thread *);
 
 void thread_ready_rearrange (struct thread *);
+
+void thread_tick_one_second (void);
 
 #endif /* threads/thread.h */

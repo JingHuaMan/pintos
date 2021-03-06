@@ -209,23 +209,26 @@ lock_acquire (struct lock *lock)
     {
 	  enum intr_level old_level = intr_disable ();
 	  thread_current ()->current_lock = lock;
-	  int current_priority = thread_get_priority ();
-	  struct lock *temp_lock = lock;
-	  struct thread *temp_holder = lock->holder;
+	  if (!thread_mlfqs)
+	    {
+		  int current_priority = thread_get_priority ();
+	      struct lock *temp_lock = lock;
+	      struct thread *temp_holder = lock->holder;
 
-	  while (temp_lock->max_priority < current_priority)
-		{
-		  temp_lock->max_priority = current_priority;
-		  thread_update_priority (temp_holder);
-		  if (temp_holder->status == THREAD_READY)
-		    thread_ready_rearrange (temp_holder);
-  
-		  temp_lock = temp_holder->current_lock;
-		  if (temp_lock == NULL)
-			break;
-		  else
-		    temp_holder = temp_lock->holder;
-		  ASSERT (temp_holder);
+	      while (temp_lock->max_priority < current_priority)
+		    {
+		      temp_lock->max_priority = current_priority;
+		      thread_update_priority (temp_holder);
+		      if (temp_holder->status == THREAD_READY)
+		      thread_ready_rearrange (temp_holder);
+
+              temp_lock = temp_holder->current_lock;
+		      if (temp_lock == NULL)
+			    break;
+		      else
+		        temp_holder = temp_lock->holder;
+		      ASSERT (temp_holder);
+		    }
 		}
 	  intr_set_level (old_level);
 	}
@@ -238,9 +241,12 @@ lock_acquire (struct lock *lock)
   lock->holder = thread_current ();
   intr_set_level (old_level);
   
-  lock_update_priority (lock);
-  thread_update_priority (thread_current ());
-  thread_yield ();
+  if (!thread_mlfqs)
+    {
+	  lock_update_priority (lock);
+      thread_update_priority (thread_current ());
+      thread_yield ();
+	}
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -277,7 +283,8 @@ lock_release (struct lock *lock)
   enum intr_level old_level = intr_disable ();
   list_remove (&lock->elem);
   intr_set_level (old_level);
-  thread_update_priority (lock->holder);
+  if (!thread_mlfqs)
+	thread_update_priority (lock->holder);
   lock->holder = NULL;
   sema_up (&lock->semaphore);
 }
