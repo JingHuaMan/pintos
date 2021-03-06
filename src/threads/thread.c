@@ -685,7 +685,7 @@ thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
                   FP_DIV (FP_MULT (FP_MULT_MIX (load_avg, 2), t->recent_cpu),
                           FP_ADD_MIX (FP_MULT_MIX (load_avg, 2), 1))
 				  , t->nice);
-  thread_mlfqs_update_priority (t);
+  thread_update_priority_mlfqs (t);
 }
 
 void
@@ -704,8 +704,8 @@ thread_tick_one_second (void)
   intr_set_level (old_level);
 }
 
-static
-void thread_update_priority_mlfqs(struct thread *t)
+static void
+thread_update_priority_mlfqs(struct thread *t)
 {
   int new_priority = FP_ROUND (FP_SUB (FP_CONST (PRI_MAX - t->nice * 2),
 						               FP_DIV_MIX (t->recent_cpu, 4)));
