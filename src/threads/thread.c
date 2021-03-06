@@ -388,7 +388,7 @@ thread_get_nice (void)
 
 /* Returns 100 times the system load average. */
 int
-thread_get_load_avg (void) 
+thread_get_load_avg (void)
 {
   return FP_ROUND (FP_MULT_MIX (load_avg, 100));
 }
@@ -680,8 +680,8 @@ thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
 { 
   t->recent_cpu = FP_ADD_MIX (
                   FP_DIV (FP_MULT (FP_MULT_MIX (load_avg, 2), t->recent_cpu),
-                          FP_ADD_MIX (FP_MULT_MIX (load_avg, 2), 1))
-				  , t->nice);
+                          FP_ADD_MIX (FP_MULT_MIX (load_avg, 2), 1)), 
+				  t->nice);
   thread_update_priority_mlfqs (t);
 }
 
@@ -691,10 +691,10 @@ thread_tick_one_second (void)
   enum intr_level old_level = intr_disable ();
   
   /* Update system load average. */
-  int num_of_waiting_threads = (int) list_size (&ready_list) +
-                               thread_current () != idle_thread ? 1 : 0;
+  int num_of_waiting_threads = (list_size (&ready_list)) +
+                               ((thread_current () != idle_thread) ? 1 : 0);
   load_avg = FP_ADD (FP_DIV_MIX (FP_MULT_MIX (load_avg, 59), 60),
-                     FP_DIV_MIX (num_of_waiting_threads, 60));
+                     FP_DIV_MIX (FP_CONST (num_of_waiting_threads), 60));
 
   /* Update recent cpu of all threads. */
   thread_foreach (thread_update_recent_cpu, NULL);
