@@ -54,9 +54,6 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
-#define FIFTYNINE_SIXTY 64443
-#define ONE_SIXTY 1092
-
 static fixed_t load_avg;
 
 /* If false (default), use round-robin scheduler.
@@ -692,11 +689,11 @@ void
 thread_tick_one_second (void)
 {
   enum intr_level old_level = intr_disable ();
- 
+  
   /* Update system load average. */
   int num_of_waiting_threads = (int) list_size (&ready_list); 
-  load_avg = FP_ADD (FP_MULT (FIFTYNINE_SIXTY, load_avg),
-                     FP_MULT_MIX (ONE_SIXTY, num_of_waiting_threads));
+  load_avg = FP_ADD (FP_DIV_MIX (FP_MUL_MIX (load_avg, 59), 60),
+                     FP_DIV_MIX (num_of_waiting_threads, 60));
 
   /* Update recent cpu of all threads. */
   thread_foreach (thread_update_recent_cpu, NULL);
