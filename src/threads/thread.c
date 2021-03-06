@@ -691,8 +691,9 @@ thread_tick_one_second (void)
   enum intr_level old_level = intr_disable ();
   
   /* Update system load average. */
-  int num_of_waiting_threads = (int) list_size (&ready_list); 
-  load_avg = FP_ADD (FP_DIV_MIX (FP_MUL_MIX (load_avg, 59), 60),
+  int num_of_waiting_threads = (int) list_size (&ready_list) +
+                               thread_current () != idle_thread ? 1 : 0;
+  load_avg = FP_ADD (FP_DIV_MIX (FP_MULT_MIX (load_avg, 59), 60),
                      FP_DIV_MIX (num_of_waiting_threads, 60));
 
   /* Update recent cpu of all threads. */
