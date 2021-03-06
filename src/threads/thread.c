@@ -712,6 +712,6 @@ thread_update_priority_mlfqs(struct thread *t)
   if (new_priority > PRI_MAX)
     new_priority = PRI_MAX;
   else if (new_priority < PRI_MIN)
-    new_priority = PRIMIN;
+    new_priority = PRI_MIN;
   t->priority = new_priority;
 }
