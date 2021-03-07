@@ -637,7 +637,7 @@ allocate_tid (void)
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
 void
-thread_set_sleeping (void)
+thread_set_sleeping (int64_t ticks)
 {
   struct thread *cur = thread_current ();
   cur->remaining_time_to_wake_up = ticks;
@@ -665,17 +665,6 @@ compare_threads_by_priority (const struct list_elem *a,
 {
   return list_entry (a, struct thread, elem)->priority <=
          list_entry (b, struct thread, elem)->priority;
-}
-
-void
-try_awaking_thread(struct thread *t, void *aux UNUSED)
-{
-  if (t->status == THREAD_BLOCKED && t->remaining_time_to_wake_up > 0)
-    {
-      t->remaining_time_to_wake_up--;
-	  if (t->remaining_time_to_wake_up <= 0)
-	    thread_unblock(t);
-	}
 }
 
 void

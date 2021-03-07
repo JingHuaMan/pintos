@@ -93,7 +93,7 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
 
   intr_disable ();
-  thread_set_sleeping ();
+  thread_set_sleeping (ticks);
   intr_set_level (INTR_ON);
 }
 
