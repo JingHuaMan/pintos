@@ -3,7 +3,7 @@
 
 /* Basic definitions of fixed point. */
 typedef int fixed_t;
-/* 16 LSB used for fractional part. */
+/* 15 LSB used for fractional part. */
 #define FP_SHIFT_AMOUNT 15
 /* Convert a value to fixed-point value. */
 #define FP_CONST(A) ((fixed_t)(A << FP_SHIFT_AMOUNT))

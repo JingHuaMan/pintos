@@ -93,9 +93,7 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
 
   intr_disable ();
-  struct thread *cur = thread_current ();
-  cur->remaining_time_to_wake_up = ticks;
-  thread_block ();
+  thread_set_sleeping ();
   intr_set_level (INTR_ON);
 }
 
@@ -174,11 +172,9 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  thread_foreach (&try_awaking_thread, NULL);
-  thread_tick ();
-  
   if (thread_mlfqs && ticks % TIMER_FREQ == 0)
     thread_tick_one_second ();
+  thread_tick ();  
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

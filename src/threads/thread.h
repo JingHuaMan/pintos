@@ -102,6 +102,8 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
     
+	struct list_elem sleepelem;
+	
 	/* Owned by devices/timer.c. */
 	int64_t remaining_time_to_wake_up;
 	
@@ -152,10 +154,10 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+void thread_set_sleeping (void);
+
 /* Used for THREAD FOR EACH in timer.c. */
 void try_thread_yield (void);
-
-void try_awaking_thread (struct thread *, void *);
 
 bool compare_threads_by_priority (const struct list_elem *,
                                   const struct list_elem *,

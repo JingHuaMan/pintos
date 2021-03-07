@@ -28,6 +28,8 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+static struct list sleeping_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -96,6 +98,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&sleeping_list);
   
   load_avg = 0;
 
@@ -152,6 +155,28 @@ thread_tick (void)
 	  /* Every four ticks, update the priority of the current thread. */
 	  if (thread_ticks % TIME_SLICE == 0)
 	    thread_update_priority_mlfqs (thread_current ());
+	}
+	
+  struct list_elem *e = list_begin (&sleeping_list);
+  struct list_elem *temp;
+  
+  while (e != list_end (&sleeping_list))
+    {
+	  struct thread *t = list_entry (e, struct thread, sleepelem);
+	  temp = e;
+	  e = list_next (e);
+	  
+	  ASSERT (t->status == THREAD_BLOCKED);
+	  
+	  if (t->remaining_time_to_wake_up > 0)
+        {
+          t->remaining_time_to_wake_up--;
+	      if (t->remaining_time_to_wake_up <= 0)
+		    {
+			  thread_unblock(t);
+			  list_remove (temp);
+			}
+	    }
 	}
 }
 
@@ -610,6 +635,15 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+void
+thread_set_sleeping (void)
+{
+  struct thread *cur = thread_current ();
+  cur->remaining_time_to_wake_up = ticks;
+  list_push_back (&sleeping_list, &cur->sleepelem);
+  thread_block ();
+}
 
 void
 try_thread_yield (void)
