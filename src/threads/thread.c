@@ -28,6 +28,8 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+/* List of sleeping processes. When the TIMER SLEEP is called,
+   put the current process into this list. */
 static struct list sleeping_list;
 
 /* Idle thread. */
@@ -56,6 +58,7 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
+/* The system load average. */
 static fixed_t load_avg;
 
 /* If false (default), use round-robin scheduler.
@@ -100,6 +103,8 @@ thread_init (void)
   list_init (&all_list);
   list_init (&sleeping_list);
   
+  /* Initialize the system load average as 0. A fixed point number 0 is
+     numerically equal to an integer 0. */
   load_avg = 0;
 
   /* Set up a thread structure for the running thread. */
@@ -147,6 +152,7 @@ thread_tick (void)
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
+  /* If the multi-level feedback queue scheduler is used. */
   if (thread_mlfqs)
     {
 	  /* Add recent cpu of the current thread by 1. */
@@ -156,7 +162,10 @@ thread_tick (void)
 	  if (thread_ticks % TIME_SLICE == 0)
 	    thread_update_priority_mlfqs (thread_current ());
 	}
-	
+
+  /* Iterate through all sleeping threads in SLEEPING LIST, decrease the
+     REMAINING TIME TO WAKE UP of these threads by 1. If any of them have a
+	 zero REMAINING TIME TO WAKE UP, wake up these threads. */
   struct list_elem *e = list_begin (&sleeping_list);
   struct list_elem *temp;
   
@@ -385,6 +394,8 @@ thread_set_priority (int new_priority)
   thread_update_priority (thread_current ());
   intr_set_level (old_level);
   
+  /* If there are threads with higher priority than the current thread, call
+     THREAD YIELD. */
   try_thread_yield ();
 }
 
@@ -400,7 +411,10 @@ void
 thread_set_nice (int nice) 
 {
   thread_current ()->nice = nice;
+  /* When the NICE is changed, the priority is possibly changed. */
   thread_update_priority_mlfqs (thread_current ());
+  /* If there are threads with higher priority than the current thread, call
+     THREAD YIELD. */
   try_thread_yield ();
 }
 
@@ -636,6 +650,8 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
+/* Complete all thread-specific Settings while putting the current thread to
+   sleep. */
 void
 thread_set_sleeping (int64_t ticks)
 {
@@ -645,6 +661,7 @@ thread_set_sleeping (int64_t ticks)
   thread_block ();
 }
 
+/* Add some preconditions for THRAED_YIELD. */
 void
 try_thread_yield (void)
 {
@@ -658,6 +675,7 @@ try_thread_yield (void)
 	thread_yield (); 
 }
 
+/* Used for list elem comparision. */
 bool
 compare_threads_by_priority (const struct list_elem *a,
                              const struct list_elem *b,
@@ -667,6 +685,7 @@ compare_threads_by_priority (const struct list_elem *a,
          list_entry (b, struct thread, elem)->priority;
 }
 
+/* Update the priority of the thread in the non-mlfqs way. */
 void
 thread_update_priority (struct thread *t)
 {
@@ -680,12 +699,16 @@ thread_update_priority (struct thread *t)
 	  int lock_priority = list_entry (list_max (&t->locks_held,
                                       compare_locks_by_priority, NULL),
 					                  struct lock, elem)->max_priority;
+	  /* If the waiting threads in the lock has a higher priority than the 
+	     current thread, then there should be priority donation. */
       t->priority = real_priority > lock_priority ?
 	                real_priority : lock_priority;
 	} 
   intr_set_level (old_level);
 }
 
+/* If the priority of a ready thread changes, this function should be called
+   to re-arrange the order of the READY LIST. */
 void
 thread_ready_rearrange (struct thread *t)
 {
@@ -698,6 +721,7 @@ thread_ready_rearrange (struct thread *t)
   intr_set_level (old_level);
 }
 
+/* Used in THREAD FOREACH, to update RECENT CPU of all threads per second. */
 void
 thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
 { 
@@ -708,6 +732,7 @@ thread_update_recent_cpu(struct thread *t, void *aux UNUSED)
   thread_update_priority_mlfqs (t);
 }
 
+/* This function is about what will happen per second with mlfqs. */
 void
 thread_tick_one_second (void)
 {
@@ -725,6 +750,7 @@ thread_tick_one_second (void)
   intr_set_level (old_level);
 }
 
+/* Update the priority in the mlfqs way. */
 static void
 thread_update_priority_mlfqs(struct thread *t)
 {
