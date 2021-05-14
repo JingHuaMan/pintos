@@ -12,7 +12,7 @@ This major part (task 1 ~ 3) of the project is finished on 7th March. Thanks to 
 
 ## Result of Task 1 to 3
 
-<img src="Final%20Report.assets/image-20210311191745134.png" width = "380" height = "520" alt="result" align=center />
+![image-20210514180205084](README.assets/image-20210514180205084.png)
 
 ## Coding Standards
 
@@ -44,13 +44,13 @@ struct thread
 
 #### Algorithms
 
-The main shortcomes of the formal codes is that, all threads ( including the sleeping threads and normal threads ) share the same storage space.
+The main shortcomings of the formal codes is that, all threads ( including the sleeping threads and normal threads ) share the same storage space.
 
-![image-20210214213617280](Design%20Document.assets/image-20210214213617280.png)
+![image-20210214213617280](README.assets/image-20210214213617280.png)
 
-So, insead of the `ready_list`, I arrange another array to store the sleeping threads: `sleeping_threads`.
+So, instead of the `ready_list`, I arrange another array to store the sleeping threads: `sleeping_threads`.
 
-![image-20210214214307531](Design%20Document.assets/image-20210214214307531.png)
+![image-20210214214307531](README.assets/image-20210214214307531.png)
 
 Firstly, call the function `thread_block()` to block the current thread ( also the thread goint to sleep ). In this step, another thread in the top of ready list will replace the "current thread".
 
@@ -66,7 +66,7 @@ Unblock them, then these threads will be put into the ready list.
 
 1. **How are race conditions avoided when multiple threads call timer_sleep() simultaneously?**
 
-   Actually, as long as the `time_sleep()` is not called in the interrupt context, multiple threads cannot really call this function simpultaneously. Then, all operations done to the `sleeping_list` is thread-safe.
+   Actually, as long as the `time_sleep()` is not called in the interrupt context, multiple threads cannot really call this function simultaneously. Then, all operations done to the `sleeping_list` is thread-safe.
 
 2. **How are race conditions avoided when a timer interrupt occurs during a call to timer_sleep()?**
 
@@ -80,7 +80,7 @@ Unblock them, then these threads will be put into the ready list.
 
 #### Rationale
 
-I have thought about just making `all_list`  to replace `sleeping_list`, because all alive threads are natually in `all_list`, then if this design is taken, there will be no needs to insert put sleeping threads in another place.
+I have thought about just making `all_list`  to replace `sleeping_list`, because all alive threads are naturally in `all_list`, then if this design is taken, there will be no needs to insert put sleeping threads in another place.
 
 However, this function `thread_foreach()`, which is used for traversing all threads, is not always safe.
 
@@ -90,7 +90,7 @@ void
 thread_foreach (thread_action_func *func, void *aux);
 ```
 
-Besides, in pratical use, there will be a great amount of threads in `all_list`. The traversing may wastes a lot of time if there are too many threads which are not sleeping.
+Besides, in practical use, there will be a great amount of threads in `all_list`. The traversing may wastes a lot of time if there are too many threads which are not sleeping.
 
 ### Task 2: Priority Scheduling
 
@@ -118,7 +118,7 @@ Besides, in pratical use, there will be a great amount of threads in `all_list`.
 
 2. In `synch.h`:
 
-   Add two attibutes in the struct `lock`:
+   Add two attributes in the struct `lock`:
 
    `elem` functions as a linked list node,
 
@@ -151,37 +151,37 @@ Besides, in pratical use, there will be a great amount of threads in `all_list`.
 
 4. Let's explain the data structure used to track priority donation with a sequence of diagrams of a nested donation: (Simulate the test `priority-donate-nest`)
 
-   1. The original thread inits two locks,
+   1. The original thread initializes two locks,
 
-      ![image-20210225011148377](Design%20Document.assets/image-20210225011148377.png)
+      ![image-20210225011148377](README.assets/image-20210225011148377.png)
 
    2. The original thread acquire lock `a`,
 
-      ![image-20210225011250904](Design%20Document.assets/image-20210225011250904.png)
+      ![image-20210225011250904](README.assets/image-20210225011250904.png)
 
    3. Create a thread `medium` with priority 32. After `thread_yield()`, as `medium` has a higher priority than the original thread, the CPU is yielded. Then it acquires lock `b`, and tries to acquire lock `a`, but `a` is held by the original thread, then donate priority to the original thread,
 
-      ![image-20210225012417679](Design%20Document.assets/image-20210225012417679.png)
+      ![image-20210225012417679](README.assets/image-20210225012417679.png)
 
    4. Return to original thread, create thread `high` with priority 33. After `thread_yield()`, as `high` has a higher priority than the original thread, the CPU is yielded. `high` tries to acquire lock `b` but failed, then it gets blocked. Recursively donate `medium` and the original thread,
 
-      ![image-20210225013324355](Design%20Document.assets/image-20210225013324355.png)
+      ![image-20210225013324355](README.assets/image-20210225013324355.png)
 
    5. Return to the original thread, release `a`, then `medium` is put back to `ready_list`. The priority of the original thread return to the real priority. After `thread_yield()`, `medium` will be the next thread to run,
 
-      ![image-20210225014235957](Design%20Document.assets/image-20210225014235957.png)
+      ![image-20210225014235957](README.assets/image-20210225014235957.png)
 
    6. Return to `medium`, `medium` holds `a`,
 
-      ![image-20210225015253916](Design%20Document.assets/image-20210225015253916.png)
+      ![image-20210225015253916](README.assets/image-20210225015253916.png)
 
    7. `medium` releases `a`, after `thread_yield()`, the next thread to run is still `medium`. Then release `b`. The priority of `medium` will return to the real priority. After `thread_yield()`, the next thread to run is `high`,
 
-      ![image-20210225015540541](Design%20Document.assets/image-20210225015540541.png)
+      ![image-20210225015540541](README.assets/image-20210225015540541.png)
 
    8. Return to `high`, `high` holds `b`,
 
-      ![image-20210225015634741](Design%20Document.assets/image-20210225015634741.png)
+      ![image-20210225015634741](README.assets/image-20210225015634741.png)
 
    9. `high` release `b`, then `high` finished. The next thread to run is `medium`, then `medium` finished. The next thread to run is the original thread, then the original thread finished.
 
@@ -191,13 +191,13 @@ Besides, in pratical use, there will be a great amount of threads in `all_list`.
 
 The function `schedule()`will call `next_thread_to_run()` to get the next thread from `ready_list`. 
 
-The `ready_list` is always sorted ascendingly according to the priority of threads it containing. When setting a thread as `THREAD_READY`, put it to `ready_list` by function `list_insert_ordered()`; find the next thread to run at the end of `ready_list`.
+The `ready_list` is always sorted in ascending order. according to the priority of threads it containing. When setting a thread as `THREAD_READY`, put it to `ready_list` by function `list_insert_ordered()`; find the next thread to run at the end of `ready_list`.
 
 ##### Acquiring a Lock
 
 When a call to `lock_acquire()`, the first thing to do is the priority donation. Before `sema_down()`, we can judge whether a lock is held or not by checking if the `holder` is null.
 
-If the prioirty of the holder is smaller than that of the current thread, then update the "donated" priority of the lock and the holder.
+If the priority of the holder is smaller than that of the current thread, then update the "donated" priority of the lock and the holder.
 
 If the holder is also locked by other locks, then repeat the above procedures, recursively.
 
@@ -284,7 +284,7 @@ This may lead to security issues, but I have no idea how to solve it.
 
 Different from TASK 2, there is no priority donation in the MLFQ scheduler, as the priority of threads are not set by users, but calculated by the OS itself.
 
-Firstly we have to maintain a variable: the system load average, denoted as `load_avg`, and it's actually a weighted moving average of the amount of waiting threads in `ready_list` and the current thread (except for the `idle_thread`). At system boot, it's intialized to 0. Per second thereafter, it is updated according to the following formula:
+Firstly we have to maintain a variable: the system load average, denoted as `load_avg`, and it's actually a weighted moving average of the amount of waiting threads in `ready_list` and the current thread (except for the `idle_thread`). At system boot, it's initialized to 0. Per second thereafter, it is updated according to the following formula:
 $$
 load\_avg = \frac{59}{60} \times load\_avg + \frac{1}{60} \times (\#\ of\ ready\ threads)
 $$
@@ -318,7 +318,7 @@ intr_set_level (old_level);
 #### Rationale
 
 1. My design is actually a quite natuaral and simple designing. Only the needed calculations are taken, which could be considered as an advantage.
-2. The fixed point number calculations are defined as macros in `fixed_point.h`. In the test, there are always some strange differneces beween the result and the expectation output. But when I turned the 15.16 FP into the 16.15 FP, the outputs of my codes meet the requirements. This may be due to a difference in accuracy.
+2. The fixed point number calculations are defined as macros in `fixed_point.h`. In the test, there are always some strange differences between the result and the expectation output. But when I turned the 15.16 FP into the 16.15 FP, the outputs of my codes meet the requirements. This may be due to a difference in accuracy.
 
 ## Additional Questions
 
@@ -326,9 +326,9 @@ intr_set_level (old_level);
 
 > Suppose threads A, B, and C have nice values 0, 1, and 2. Each has a recent_cpu value of 0. Fill in the table below showing the scheduling decision and the recent_cpu and priority values for each thread after each given number of timer ticks. We can use R(A) and P(A) to denote the recent_cpu and priority values of thread A, for brevity.
 
-Suppose threads A, B, and C have nice values 0, 1, and 2. Each has a recent_cpu value of 0. The table below shows the scheduling decision and the priority and recent_cpu values for each thread after each given number of timer ticks. To simlify the problem, assume that `TIMER_FREQ` is greater than 36.
+Suppose threads A, B, and C have nice values 0, 1, and 2. Each has a recent_cpu value of 0. The table below shows the scheduling decision and the priority and recent_cpu values for each thread after each given number of timer ticks. To simplify the problem, assume that `TIMER_FREQ` is greater than 36.
 
-![image-20210405135045117](Final%20Report.assets/image-20210405135045117.png)
+![image-20210405135045117](README.assets/image-20210405135045117.png)
 
 ### 2.
 
@@ -336,7 +336,7 @@ Suppose threads A, B, and C have nice values 0, 1, and 2. Each has a recent_cpu 
 
 Yes. 
 
-Acutually, in my codes (and also in the tests), the thread yielding does not occur after the priority has been changed, and the yielding is prohibited in the interrupt context.
+Actually, in my codes (and also in the tests), the thread yielding does not occur after the priority has been changed, and the yielding is prohibited in the interrupt context.
 
 So I didn't change the running thread to another with a higher priority, unless it calls `thread_yield()`. 
 
